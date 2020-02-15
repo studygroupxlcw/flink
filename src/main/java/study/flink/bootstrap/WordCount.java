@@ -1,6 +1,7 @@
 package study.flink.bootstrap;
 
 import org.apache.flink.api.java.functions.KeySelector;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import study.flink.MessageFlatMap;
@@ -21,6 +22,7 @@ public class WordCount {
                 .aggregate(new WordAggregate())
                 .flatMap(new ResultFlatMap())
                 .print();
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.execute("test");
     }
 
