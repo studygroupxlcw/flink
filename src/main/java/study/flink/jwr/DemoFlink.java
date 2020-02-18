@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 //https://github.com/studygroupxlcw/flink.git
-//https://github.com/jiaowr/flinkdemo.git
+///886--
 //git@github.com:studygroupxlcw/flink.git
 public class DemoFlink {
 
@@ -35,9 +35,12 @@ public class DemoFlink {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         // env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         env.setParallelism(1);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
         // 设置flink重启策略
         env.getConfig().setRestartStrategy(RestartStrategies.fixedDelayRestart(4, 1000));
         //  DataStream<String> text = env.socketTextStream("149.248.60.109", 9009, "\n");
+
+        //env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         DataStream<String> text = env.socketTextStream("localhost", 9000, "\n");
         text.flatMap(new FlatMapFunction<String, WordCount>() {
             @Override
@@ -49,18 +52,22 @@ public class DemoFlink {
                     long captureTime = System.currentTimeMillis()/1000;
                     for (String line : lines) {
                         if (!line.isEmpty()){
-                            collector.collect(new WordCount(filename+":"+line,1,captureTime));
+                            collector.collect(new WordCount(filename,line,1,captureTime));
                         }
                     }
                 }
             }
         })
                 .returns(WordCount.class).keyBy("word")
-                .flatMap(new WordCountUtil()).returns(WordCount.class)
-                .keyBy("word")
-               // .window(TumblingEventTimeWindows.of(Time.hours(1)))
-               // .trigger(new CustomTrigger(10, 1 * 60 * 1000L))
-                .sum("count").print();
+                //.flatMap(new WordCountUtil())
+               // .keyBy("word")
+                .timeWindow(Time.minutes(10))
+                .trigger(new ProcessTimeTrigger(60000))
+                .aggregate(new newWcSumAggregator())
+                //.timeWindowAll(org.apache.flink.streaming.api.windowing.time.Time.seconds(20))
+               // .trigger(CustomTrigger.create())
+      //.timeWindowAll(Time.seconds(10)).trigger(new CountTriggerWithTimeout(1000, TimeCharacteristic.ProcessingTime)        )
+                .print();
         env.execute("stateful tigger WordCount");
 
     }
@@ -82,7 +89,7 @@ public class DemoFlink {
                     long captureTime = System.currentTimeMillis()/1000;
                     for (String line : lines) {
                         if (!line.isEmpty()){
-                            collector.collect(new WordCount(filename+":"+line,1,captureTime));
+                            collector.collect(new WordCount(filename,line,1,captureTime));
                         }
                     }
                 }
@@ -90,11 +97,11 @@ public class DemoFlink {
        })
                 .assignTimestampsAndWatermarks(new WatermarkGenerate())
                    .returns(WordCount.class).keyBy("word")
-                .flatMap(new WordCountUtil()).returns(WordCount.class)
-                .keyBy("word")
+               // .flatMap(new WordCountUtil()).returns(WordCountState.class)
+              //  .keyBy("word")
              .timeWindow(Time.minutes(10), Time.minutes(1))
                 .aggregate(new newWcSumAggregator())
-                .filter(wordCount->wordCount.getTimestamp() + 60 >= System.currentTimeMillis() / 1000)
+              //  .filter(wordCount->wordCount.getTimestamp() + 60 >= System.currentTimeMillis() / 1000)
                 .print();
         env.execute("stateful Window WordCount");
 
@@ -106,7 +113,7 @@ public class DemoFlink {
 
         DemoFlink df = new DemoFlink();
         //使用windows的方法
-       // df.wordCount1();
+        //df.wordCount1();
         //非windows的方法 定时触发
         df.wordCount2();
     }

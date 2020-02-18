@@ -1,6 +1,7 @@
 package jwr;
 
 public class WordCount {
+    private String filename;
     private String word;
     private Integer count;
     private long timestamp;
@@ -8,11 +9,20 @@ public class WordCount {
     public WordCount() {
     }
 
-    public WordCount(String word, Integer count,Long timestamp) {
+    public WordCount(String filename,String word, Integer count,Long timestamp) {
+        this.filename=filename;
         this.word = word;
         this.count = count;
         this.timestamp=timestamp;
     }
+
+    public String getFilename() {
+        return filename;
+    }
+    public void setFilename(String filename){
+        this.filename = filename;
+    }
+
     public String getWord() {
         return word;
     }
@@ -30,11 +40,10 @@ public class WordCount {
 
     @Override
     public String toString() {
-        return "WordCount{" +
-                "filename='" + word.split(":")[0] + '\'' +
-                ", word=" + word.split(":")[1] +
+        return
+                "filename='" + filename + '\'' +
+                ", word='" + word + '\'' +
                 ", count=" + count +
-                ", timestamp=" + timestamp +
-                '}';
+                ", timestamp=" + timestamp ;
     }
 }
