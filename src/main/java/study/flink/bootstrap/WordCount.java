@@ -17,7 +17,7 @@ public class WordCount {
         env.socketTextStream("149.248.60.109", 9009, "\n")
                 .flatMap(new MessageFlatMap())
                 .assignTimestampsAndWatermarks(new WatermarkGenerate())
-                .keyBy((KeySelector<Word, String>) value -> value.value)
+                .keyBy((KeySelector<Word, Integer>) value -> Math.abs(value.value.hashCode() % 256))
                 .timeWindow(Time.minutes(10), Time.minutes(1))
                 .aggregate(new WordAggregate())
                 .flatMap(new ResultFlatMap())
