@@ -4,6 +4,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import study.flink.FwcAggregator;
 import study.flink.FwcFlatMap;
 import study.flink.bean.Word;
 
@@ -15,11 +16,12 @@ public class FilewordCount {
         //获取输入
         DataStreamSource<String> text = env.socketTextStream("192.168.1.210", 9999, "\n");
 
-        // 根据文件名,单词分组统计
+        // 根据单词分组统计
         DataStream<Word> wordCount = text.flatMap(new FwcFlatMap())
-                .keyBy("filename", "word")
+                .keyBy("word")
                 .timeWindow(Time.seconds(600), Time.seconds(60))
-                .sum("count");
+                .aggregate(new FwcAggregator());
+//                .sum("count");
 
         wordCount.print()
                 .setParallelism(1);//使用一个并行度
